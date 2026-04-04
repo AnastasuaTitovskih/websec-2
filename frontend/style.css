@@ -10,7 +10,6 @@ body {
     color: #1a1a2e;
 }
 
-/* Контейнер */
 .app-container {
     max-width: 600px;
     margin: 0 auto;
@@ -18,7 +17,6 @@ body {
     min-height: 100vh;
 }
 
-/* Шапка */
 .header {
     text-align: center;
     margin-bottom: 24px;
@@ -42,7 +40,6 @@ body {
     opacity: 0.8;
 }
 
-/* Вкладки */
 .tabs {
     display: flex;
     gap: 8px;
@@ -85,7 +82,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Карточки поиска */
 .search-card {
     background: white;
     border-radius: 20px;
@@ -127,7 +123,6 @@ body {
     box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
 }
 
-/* Подсказки автодополнения */
 .suggestions {
     position: absolute;
     top: 100%;
@@ -164,7 +159,7 @@ body {
     margin-top: 2px;
 }
 
-/* Кнопки */
+
 .btn-primary {
     width: 100%;
     padding: 14px;
@@ -189,7 +184,6 @@ body {
     border: 1px solid #ddd;
 }
 
-/* Популярные станции */
 .popular-section {
     background: white;
     border-radius: 20px;
@@ -222,7 +216,6 @@ body {
     color: white;
 }
 
-/* Результаты */
 .results-container {
     background: white;
     border-radius: 20px;
@@ -249,7 +242,6 @@ body {
     color: #888;
 }
 
-/* Карточка поезда */
 .train-card {
     background: #f8f9fa;
     border-radius: 16px;
@@ -334,7 +326,6 @@ body {
     color: #ff4757;
 }
 
-/* Избранное */
 .favorites-list {
     min-height: 150px;
 }
@@ -373,7 +364,6 @@ body {
     padding: 32px;
 }
 
-/* Лоадер */
 .loader {
     text-align: center;
     padding: 40px;
@@ -390,7 +380,6 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* Адаптация для мобилок */
 @media (max-width: 480px) {
     .app-container {
         padding: 12px;

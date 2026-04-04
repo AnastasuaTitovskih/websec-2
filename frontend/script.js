@@ -3,8 +3,6 @@ const API_BASE = 'http://localhost:5000/api';
 let selectedFromCode = null;
 let selectedToCode = null;
 let selectedSingleCode = null;
-
-// Избранное
 let favorites = [];
 
 $(document).ready(function() {
@@ -145,18 +143,14 @@ function loadPopularStations() {
 function renderSchedule(data) {
     const container = $('#schedule-list');
     
-    // Определяем, в каком формате пришли данные
-    let scheduleList = [];
+    let scheduleList = [];    
     
-    // Если есть schedule (для поиска по одной станции)
     if (data && data.schedule && Array.isArray(data.schedule)) {
         scheduleList = data.schedule;
-    }
-    // Если есть segments (для поиска между станциями)
+    }   
     else if (data && data.segments && Array.isArray(data.segments)) {
         scheduleList = data.segments;
-    }
-    // Если пришел массив напрямую
+    }    
     else if (data && Array.isArray(data)) {
         scheduleList = data;
     }
@@ -175,8 +169,7 @@ function renderSchedule(data) {
     $('#results-count').text(`${scheduleList.length} поезд(ов)`);
     container.empty();
     
-    scheduleList.forEach((item) => {
-        // Для поиска между станциями (segments)
+    scheduleList.forEach((item) => {        
         if (item.departure && item.arrival && item.from && item.to) {
             const trainNumber = item.thread?.number || '---';
             const fromStation = item.from?.title || '---';
@@ -225,8 +218,7 @@ function renderSchedule(data) {
             });
             
             container.append(trainCard);
-        }
-        // Для поиска по одной станции (schedule)
+        }        
         else if (item.thread) {
             const trainTitle = item.thread.title || 'Электричка';
             const trainNumber = item.thread.number ? `№${item.thread.number}` : '';
@@ -290,8 +282,6 @@ function renderSchedule(data) {
         }
     });
 }
-
-// ============= РАБОТА С ИЗБРАННЫМ =============
 
 function loadFavorites() {
     const saved = localStorage.getItem('favoriteStations');
@@ -379,5 +369,5 @@ function showLoader() {
 }
 
 function hideLoader() {
-    // Лоадер исчезнет при отрисовке новых данных
+    
 }
