@@ -1,0 +1,411 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+}
+
+/* Контейнер */
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+}
+
+/* Шапка */
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 24px;
+    color: white;
+}
+
+.header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.header h1 i {
+    margin-right: 10px;
+}
+
+.subtitle {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Вкладки */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: white;
+    padding: 6px;
+    border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #666;
+}
+
+.tab-btn.active {
+    background: #1a1a2e;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Карточки поиска */
+.search-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.input-group {
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.input-group label i {
+    margin-right: 6px;
+    color: #1a1a2e;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
+}
+
+/* Подсказки автодополнения */
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.1s;
+}
+
+.suggestion-item:hover {
+    background: #f5f5f5;
+}
+
+.suggestion-item .station-name {
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.suggestion-item .station-loc {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Кнопки */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: #f0f2f5;
+    color: #1a1a2e;
+    border: 1px solid #ddd;
+}
+
+/* Популярные станции */
+.popular-section {
+    background: white;
+    border-radius: 20px;
+    padding: 16px;
+}
+
+.popular-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #666;
+}
+
+.popular-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.popular-item {
+    background: #f0f2f5;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.popular-item:hover {
+    background: #1a1a2e;
+    color: white;
+}
+
+/* Результаты */
+.results-container {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.results-header h3 {
+    font-size: 18px;
+}
+
+#results-count {
+    font-size: 13px;
+    color: #888;
+}
+
+/* Карточка поезда */
+.train-card {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    border-left: 4px solid #1a1a2e;
+}
+
+.train-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.train-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.train-number {
+    font-weight: 700;
+    font-size: 16px;
+    color: #1a1a2e;
+}
+
+.train-route {
+    font-size: 13px;
+    color: #666;
+}
+
+.train-time {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.departure {
+    text-align: left;
+}
+
+.arrival {
+    text-align: right;
+}
+
+.time {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.station {
+    font-size: 12px;
+    color: #888;
+}
+
+.duration {
+    text-align: center;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e0e0e0;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.favorite-btn.active {
+    color: #ff4757;
+}
+
+.favorite-btn:hover {
+    color: #ff4757;
+}
+
+/* Избранное */
+.favorites-list {
+    min-height: 150px;
+}
+
+.favorite-station-card {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-station-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.favorite-station-info p {
+    font-size: 12px;
+    color: #888;
+}
+
+.remove-favorite {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #ff4757;
+}
+
+.empty-message {
+    text-align: center;
+    color: #888;
+    padding: 32px;
+}
+
+/* Лоадер */
+.loader {
+    text-align: center;
+    padding: 40px;
+}
+
+.loader i {
+    font-size: 32px;
+    color: #1a1a2e;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Адаптация для мобилок */
+@media (max-width: 480px) {
+    .app-container {
+        padding: 12px;
+    }
+    
+    .train-time {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .arrival {
+        text-align: left;
+    }
+    
+    .duration {
+        text-align: left;
+    }
+}

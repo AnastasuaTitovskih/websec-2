@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Электрички — расписание пригородных поездов</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">        
+        <header class="header">
+            <h1><i class="fas fa-train"></i> Электрички</h1>
+            <p class="subtitle">Расписание пригородных поездов</p>
+        </header>
+
+        <!-- Вкладки -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="between">Между станциями</button>
+            <button class="tab-btn" data-tab="station">По станции</button>
+            <button class="tab-btn" data-tab="favorites">⭐ Избранное</button>
+        </div>
+
+        <div id="between-tab" class="tab-content active">
+            <div class="search-card">
+                <div class="input-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Откуда:</label>
+                    <input type="text" id="from-station" placeholder="Название станции" autocomplete="off">
+                    <div id="from-suggestions" class="suggestions"></div>
+                </div>
+                
+                <div class="input-group">
+                    <label><i class="fas fa-flag-checkered"></i> Куда:</label>
+                    <input type="text" id="to-station" placeholder="Название станции" autocomplete="off">
+                    <div id="to-suggestions" class="suggestions"></div>
+                </div>
+                
+                <button id="search-between" class="btn-primary">
+                    <i class="fas fa-search"></i> Найти поезда
+                </button>
+            </div>
+        </div>
+        
+        <div id="station-tab" class="tab-content">
+            <div class="search-card">
+                <div class="input-group">
+                    <label><i class="fas fa-train"></i> Станция:</label>
+                    <input type="text" id="single-station" placeholder="Название станции" autocomplete="off">
+                    <div id="single-suggestions" class="suggestions"></div>
+                </div>
+                
+                <button id="search-station" class="btn-primary">
+                    <i class="fas fa-clock"></i> Показать все поезда
+                </button>
+            </div>
+            
+            <div class="popular-section">
+                <h3><i class="fas fa-star"></i> Популярные станции</h3>
+                <div id="popular-stations" class="popular-list"></div>
+            </div>
+        </div>
+        
+        <div id="favorites-tab" class="tab-content">
+            <div class="favorites-card">
+                <h3><i class="fas fa-heart"></i> Любимые станции</h3>
+                <div id="favorites-list" class="favorites-list">
+                    <p class="empty-message">Нет избранных станций. Добавьте их из расписания!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="results" class="results-container">
+            <div class="results-header">
+                <h3><i class="fas fa-list"></i> Расписание</h3>
+                <span id="results-count"></span>
+            </div>
+            <div id="schedule-list" class="schedule-list">             
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
