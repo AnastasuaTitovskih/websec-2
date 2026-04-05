@@ -4,6 +4,8 @@ let selectedFromCode = null;
 let selectedToCode = null;
 let selectedSingleCode = null;
 let favorites = [];
+let map = null;
+let placemarks = [];
 
 $(document).ready(function() {
     favorites = loadFavorites();
@@ -29,6 +31,12 @@ function initTabs() {
         else if (tab === 'favorites') {
             $('#favorites-tab').addClass('active');
             renderFavorites();
+        }
+        else if (tab === 'map') {
+            $('#map-tab').addClass('active');
+            setTimeout(() => {
+                initMap();
+            }, 100);
         }
     });
 }
@@ -185,8 +193,9 @@ function renderSchedule(data) {
                 <div class="train-card">
                     <div class="train-header">
                         <span class="train-number">Электричка №${trainNumber}</span>
-                        <button class="favorite-btn ${isFav ? 'active' : ''}" data-code="${stationCode}" data-title="${stationTitle}">
-                            <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}"></i>
+                        <button class="favorite-btn ${isFav ? 'active' : ''}" data-code="${stationCode}" data-title="${stationTitle}" style="background:#f0f2f5; color:#ff4757; padding:4px 10px; border-radius:20px; font-size:13px; cursor:pointer; border:none; display:flex; align-items:center; gap:6px;">
+                            <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}" style="font-size:14px;"></i>
+                            <span style="font-size:12px; color:#666;">${isFav ? 'В избранном' : 'В избранное'}</span>
                         </button>
                     </div>
                     <div class="train-route">${fromStation} → ${toStation}</div>
@@ -215,6 +224,12 @@ function renderSchedule(data) {
                 } else {
                     icon.removeClass('fa-heart').addClass('fa-heart-o');
                 }
+                const span = $(this).find('span');
+                if (span.text() === 'В избранное') {
+                    span.text('В избранном');
+                } else {
+                    span.text('В избранное');
+                }
             });
             
             container.append(trainCard);
@@ -238,15 +253,14 @@ function renderSchedule(data) {
             let stationCode = selectedSingleCode || fromStation;
             let stationTitle = fromStation !== '---' ? fromStation : trainTitle.split(' — ')[0];
             
-            const isFav = isFavorite(stationCode);
-            console.log('Создаём кнопку избранного:', { stationCode, stationTitle, isFav });
+            const isFav = isFavorite(stationCode);            
             const trainCard = $(`
                 <div class="train-card">
                     <div class="train-header">
                         <span class="train-number">${trainTitle} ${trainNumber}</span>
                         <button class="favorite-btn ${isFav ? 'active' : ''}" data-code="${stationCode}" data-title="${stationTitle}" style="background:#f0f2f5; color:#ff4757; padding:4px 10px; border-radius:20px; font-size:13px; cursor:pointer; border:none; display:flex; align-items:center; gap:6px;">
-                        <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}" style="font-size:14px;"></i>
-                        <span style="font-size:12px; color:#666;">${isFav ? 'В избранном' : 'В избранное'}</span>
+                            <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}" style="font-size:14px;"></i>
+                            <span style="font-size:12px; color:#666;">${isFav ? 'В избранном' : 'В избранное'}</span>
                         </button>
                     </div>
                     <div class="train-route">${fromStation} → ${toStation}</div>
@@ -275,6 +289,12 @@ function renderSchedule(data) {
                     icon.removeClass('fa-heart-o').addClass('fa-heart');
                 } else {
                     icon.removeClass('fa-heart').addClass('fa-heart-o');
+                }
+                const span = $(this).find('span');
+                if (span.text() === 'В избранное') {
+                    span.text('В избранном');
+                } else {
+                    span.text('В избранное');
                 }
             });
             
@@ -354,7 +374,7 @@ function renderFavorites() {
 function showMessage(text) {
     let toast = $('#toast-message');
     if (toast.length === 0) {
-        $('body').append('<div id="toast-message" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1a1a2e; color:white; padding:12px 20px; border-radius:30px; font-size:14px; z-index:1000; display:none; white-space:nowrap;"></div>');
+        $('body').append('<div id="toast-message" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1a1a2e; color:white; padding:12px 20px; border-radius:30px; font-size:14px; z-index:1000; display:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>');
         toast = $('#toast-message');
     }
     
@@ -368,6 +388,86 @@ function showLoader() {
     $('#schedule-list').html('<div class="loader"><i class="fas fa-spinner"></i> Загрузка расписания...</div>');
 }
 
-function hideLoader() {
+function hideLoader() {   
+}
+
+
+function initMap() {
+    if (map !== null) {
+        map.container.fitToViewport();
+        return;
+    }
     
+    if (typeof ymaps === 'undefined') {
+        setTimeout(initMap, 200);
+        return;
+    }
+    
+    ymaps.ready(function() {
+        map = new ymaps.Map('map', {
+            center: [55.751574, 37.573856],
+            zoom: 9,
+            controls: ['zoomControl', 'fullscreenControl']
+        });        
+       
+        loadStationsForMap();
+    });
+}
+
+function loadStationsForMap() {    
+    const stationsWithCoords = [
+        { name: 'Москва (Киевский вокзал)', lat: 55.7436, lon: 37.5673, code: 's9603402' },
+        { name: 'Санкт-Петербург (Витебский)', lat: 59.9167, lon: 30.3417, code: 's9603551' },
+        { name: 'Казанский вокзал (Москва)', lat: 55.7737, lon: 37.6564, code: 's9603404' },
+        { name: 'Ярославский вокзал (Москва)', lat: 55.7767, lon: 37.6577, code: 's9603408' },
+        { name: 'Павелецкий вокзал (Москва)', lat: 55.7305, lon: 37.6397, code: 's9603405' },
+        { name: 'Самара (ж/д вокзал)', lat: 53.1959, lon: 50.1178, code: 's9603251' },
+        { name: 'Тольятти', lat: 53.5207, lon: 49.4082, code: 's9603268' },
+        { name: 'Нижний Новгород (Московский)', lat: 56.3214, lon: 43.9455, code: 's9603437' },
+        { name: 'Екатеринбург (ж/д вокзал)', lat: 56.8586, lon: 60.5985, code: 's9603512' },
+        { name: 'Новосибирск (Главный)', lat: 55.0358, lon: 82.8963, code: 's9603643' },
+        { name: 'Красноярск (ж/д вокзал)', lat: 56.0089, lon: 92.8675, code: 's9603663' },
+        { name: 'Владивосток (ж/д вокзал)', lat: 43.1112, lon: 131.8811, code: 's9603865' },
+        { name: 'Ростов-на-Дону (Главный)', lat: 47.2195, lon: 39.6914, code: 's9603564' },
+        { name: 'Краснодар (ж/д вокзал)', lat: 45.0155, lon: 38.9699, code: 's9603578' },
+        { name: 'Волгоград (ж/д вокзал)', lat: 48.7086, lon: 44.5171, code: 's9603540' }
+    ];
+    
+    stationsWithCoords.forEach(station => {        
+        const placemark = new ymaps.Placemark([station.lat, station.lon], {
+            hintContent: station.name,
+            balloonContent: `
+                <div style="padding: 10px;">
+                    <strong>${station.name}</strong><br>
+                    <button onclick="selectStationByCode('${station.code}', '${station.name}')" 
+                            style="margin-top: 10px; background: #1a1a2e; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                        Показать расписание
+                    </button>
+                </div>
+            `
+        }, {
+            preset: 'islands#blueRailwayIcon',
+            iconColor: '#1a1a2e'
+        });        
+        
+        placemark.events.add('click', function() {
+            selectStationByCode(station.code, station.name);
+        });
+        
+        map.geoObjects.add(placemark);
+        placemarks.push(placemark);
+    });
+    
+    showMessage(`📍 На карте отмечено ${stationsWithCoords.length} станций. Нажмите на любую!`);
+}
+
+function selectStationByCode(code, name) {
+    selectedSingleCode = code;
+    $('#single-station').val(name);    
+    $('.tab-btn[data-tab="station"]').click();
+    setTimeout(() => {
+        searchStationSchedule();
+    }, 100);
+    
+    showMessage(`🔍 Ищем расписание для "${name}"...`);
 }
