@@ -5,7 +5,7 @@ let selectedToCode = null;
 let selectedSingleCode = null;
 let favorites = [];
 let map = null;
-let placemarks = [];
+let mapInitialized = false;
 
 $(document).ready(function() {
     favorites = loadFavorites();
@@ -34,9 +34,11 @@ function initTabs() {
         }
         else if (tab === 'map') {
             $('#map-tab').addClass('active');
-            setTimeout(() => {
+            if (!mapInitialized) {
                 initMap();
-            }, 100);
+            } else if (map) {
+                map.container.fitToViewport();
+            }
         }
     });
 }
@@ -120,7 +122,6 @@ function searchStationSchedule() {
     
     $.get(`${API_BASE}/schedule?station_code=${selectedSingleCode}`)
         .done(function(data) {
-            console.log("Данные от API (станция):", data);
             renderSchedule(data);
         })
         .fail(function(error) {
@@ -189,49 +190,9 @@ function renderSchedule(data) {
             const stationTitle = fromStation;
             const isFav = isFavorite(stationCode);
             
-            const trainCard = $(`
-                <div class="train-card">
-                    <div class="train-header">
-                        <span class="train-number">Электричка №${trainNumber}</span>
-                        <button class="favorite-btn ${isFav ? 'active' : ''}" data-code="${stationCode}" data-title="${stationTitle}" style="background:#f0f2f5; color:#ff4757; padding:4px 10px; border-radius:20px; font-size:13px; cursor:pointer; border:none; display:flex; align-items:center; gap:6px;">
-                            <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}" style="font-size:14px;"></i>
-                            <span style="font-size:12px; color:#666;">${isFav ? 'В избранном' : 'В избранное'}</span>
-                        </button>
-                    </div>
-                    <div class="train-route">${fromStation} → ${toStation}</div>
-                    <div class="train-time">
-                        <div class="departure">
-                            <div class="time">${departureTime}</div>
-                            <div class="station">${fromStation}</div>
-                        </div>
-                        <div class="arrival">
-                            <div class="time">${arrivalTime}</div>
-                            <div class="station">${toStation}</div>
-                        </div>
-                    </div>
-                </div>
-            `);
+            const trainCard = renderTrainCardBetween(trainNumber, fromStation, toStation, departureTime, arrivalTime, stationCode, stationTitle, isFav);
             
-            trainCard.find('.favorite-btn').click(function(e) {
-                e.stopPropagation();
-                const code = $(this).data('code');
-                const title = $(this).data('title');
-                toggleFavorite(code, title);
-                $(this).toggleClass('active');
-                const icon = $(this).find('i');
-                if (icon.hasClass('fa-heart-o')) {
-                    icon.removeClass('fa-heart-o').addClass('fa-heart');
-                } else {
-                    icon.removeClass('fa-heart').addClass('fa-heart-o');
-                }
-                const span = $(this).find('span');
-                if (span.text() === 'В избранное') {
-                    span.text('В избранном');
-                } else {
-                    span.text('В избранное');
-                }
-            });
-            
+            attachFavoriteHandler(trainCard, stationCode, stationTitle);
             container.append(trainCard);
         }        
         else if (item.thread) {
@@ -253,62 +214,54 @@ function renderSchedule(data) {
             let stationCode = selectedSingleCode || fromStation;
             let stationTitle = fromStation !== '---' ? fromStation : trainTitle.split(' — ')[0];
             
-            const isFav = isFavorite(stationCode);            
-            const trainCard = $(`
-                <div class="train-card">
-                    <div class="train-header">
-                        <span class="train-number">${trainTitle} ${trainNumber}</span>
-                        <button class="favorite-btn ${isFav ? 'active' : ''}" data-code="${stationCode}" data-title="${stationTitle}" style="background:#f0f2f5; color:#ff4757; padding:4px 10px; border-radius:20px; font-size:13px; cursor:pointer; border:none; display:flex; align-items:center; gap:6px;">
-                            <i class="fas ${isFav ? 'fa-heart' : 'fa-heart-o'}" style="font-size:14px;"></i>
-                            <span style="font-size:12px; color:#666;">${isFav ? 'В избранном' : 'В избранное'}</span>
-                        </button>
-                    </div>
-                    <div class="train-route">${fromStation} → ${toStation}</div>
-                    <div class="train-time">
-                        <div class="departure">
-                            <div class="time">${departureTime}</div>
-                            <div class="station">Отправление</div>
-                        </div>
-                        <div class="arrival">
-                            <div class="time">${arrivalTime}</div>
-                            <div class="station">Прибытие</div>
-                        </div>
-                    </div>
-                    ${item.days ? `<div class="duration">📅 ${item.days}</div>` : ''}
-                </div>
-            `);
+            const isFav = isFavorite(stationCode);
             
-            trainCard.find('.favorite-btn').click(function(e) {
-                e.stopPropagation();
-                const code = $(this).data('code');
-                const title = $(this).data('title');
-                toggleFavorite(code, title);
-                $(this).toggleClass('active');
-                const icon = $(this).find('i');
-                if (icon.hasClass('fa-heart-o')) {
-                    icon.removeClass('fa-heart-o').addClass('fa-heart');
-                } else {
-                    icon.removeClass('fa-heart').addClass('fa-heart-o');
-                }
-                const span = $(this).find('span');
-                if (span.text() === 'В избранное') {
-                    span.text('В избранном');
-                } else {
-                    span.text('В избранное');
-                }
-            });
+            const trainCard = renderTrainCardStation(trainTitle, trainNumber, fromStation, toStation, departureTime, arrivalTime, stationCode, stationTitle, isFav, item.days);
             
+            attachFavoriteHandler(trainCard, stationCode, stationTitle);
             container.append(trainCard);
         }
     });
 }
 
+function attachFavoriteHandler(card, code, title) {
+    card.find('.favorite-btn').click(function(e) {
+        e.stopPropagation();
+        toggleFavorite(code, title);
+        $(this).toggleClass('active');
+        const icon = $(this).find('i');
+        const span = $(this).find('span');
+        
+        const isNowFavorite = isFavorite(code);
+        if (isNowFavorite) {
+            icon.removeClass('fa-heart-o').addClass('fa-heart');
+            span.text('В избранном');
+        } else {
+            icon.removeClass('fa-heart').addClass('fa-heart-o');
+            span.text('В избранное');
+        }
+    });
+}
+
+function isLocalStorageAvailable() {
+    try {
+        const test = '__storage_test__';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
 function loadFavorites() {
+    if (!isLocalStorageAvailable()) return [];
     const saved = localStorage.getItem('favoriteStations');
     return saved ? JSON.parse(saved) : [];
 }
 
 function saveFavorites() {
+    if (!isLocalStorageAvailable()) return;
     localStorage.setItem('favoriteStations', JSON.stringify(favorites));
 }
 
@@ -388,17 +341,16 @@ function showLoader() {
     $('#schedule-list').html('<div class="loader"><i class="fas fa-spinner"></i> Загрузка расписания...</div>');
 }
 
-function hideLoader() {   
+function hideLoader() {
+    
 }
 
 
 function initMap() {
-    if (map !== null) {
-        map.container.fitToViewport();
-        return;
-    }
+    if (map !== null) return;
     
     if (typeof ymaps === 'undefined') {
+        console.log('Ожидание загрузки Яндекс.Карт...');
         setTimeout(initMap, 200);
         return;
     }
@@ -408,32 +360,16 @@ function initMap() {
             center: [55.751574, 37.573856],
             zoom: 9,
             controls: ['zoomControl', 'fullscreenControl']
-        });        
-       
-        loadStationsForMap();
+        });
+        mapInitialized = true;
+        loadStationsOnMap();
     });
 }
 
-function loadStationsForMap() {    
-    const stationsWithCoords = [
-        { name: 'Москва (Киевский вокзал)', lat: 55.7436, lon: 37.5673, code: 's9603402' },
-        { name: 'Санкт-Петербург (Витебский)', lat: 59.9167, lon: 30.3417, code: 's9603551' },
-        { name: 'Казанский вокзал (Москва)', lat: 55.7737, lon: 37.6564, code: 's9603404' },
-        { name: 'Ярославский вокзал (Москва)', lat: 55.7767, lon: 37.6577, code: 's9603408' },
-        { name: 'Павелецкий вокзал (Москва)', lat: 55.7305, lon: 37.6397, code: 's9603405' },
-        { name: 'Самара (ж/д вокзал)', lat: 53.1959, lon: 50.1178, code: 's9603251' },
-        { name: 'Тольятти', lat: 53.5207, lon: 49.4082, code: 's9603268' },
-        { name: 'Нижний Новгород (Московский)', lat: 56.3214, lon: 43.9455, code: 's9603437' },
-        { name: 'Екатеринбург (ж/д вокзал)', lat: 56.8586, lon: 60.5985, code: 's9603512' },
-        { name: 'Новосибирск (Главный)', lat: 55.0358, lon: 82.8963, code: 's9603643' },
-        { name: 'Красноярск (ж/д вокзал)', lat: 56.0089, lon: 92.8675, code: 's9603663' },
-        { name: 'Владивосток (ж/д вокзал)', lat: 43.1112, lon: 131.8811, code: 's9603865' },
-        { name: 'Ростов-на-Дону (Главный)', lat: 47.2195, lon: 39.6914, code: 's9603564' },
-        { name: 'Краснодар (ж/д вокзал)', lat: 45.0155, lon: 38.9699, code: 's9603578' },
-        { name: 'Волгоград (ж/д вокзал)', lat: 48.7086, lon: 44.5171, code: 's9603540' }
-    ];
+function loadStationsOnMap() {
+    if (!map || typeof STATIONS_COORDS === 'undefined') return;
     
-    stationsWithCoords.forEach(station => {        
+    STATIONS_COORDS.forEach(station => {
         const placemark = new ymaps.Placemark([station.lat, station.lon], {
             hintContent: station.name,
             balloonContent: `
@@ -448,26 +384,23 @@ function loadStationsForMap() {
         }, {
             preset: 'islands#blueRailwayIcon',
             iconColor: '#1a1a2e'
-        });        
+        });
         
         placemark.events.add('click', function() {
             selectStationByCode(station.code, station.name);
         });
         
         map.geoObjects.add(placemark);
-        placemarks.push(placemark);
     });
     
-    showMessage(`📍 На карте отмечено ${stationsWithCoords.length} станций. Нажмите на любую!`);
+    showMessage(`📍 На карте отмечено ${STATIONS_COORDS.length} станций. Нажмите на маркер!`);
 }
 
 function selectStationByCode(code, name) {
     selectedSingleCode = code;
-    $('#single-station').val(name);    
+    $('#single-station').val(name);
     $('.tab-btn[data-tab="station"]').click();
     setTimeout(() => {
         searchStationSchedule();
     }, 100);
-    
-    showMessage(`🔍 Ищем расписание для "${name}"...`);
 }

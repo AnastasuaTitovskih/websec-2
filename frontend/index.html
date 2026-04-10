@@ -74,14 +74,8 @@
         <div id="map-tab" class="tab-content">
             <div class="search-card">
                 <h3><i class="fas fa-map-marker-alt"></i> Выберите станцию на карте</h3>
-                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Нажмите на карту, чтобы найти ближайшие ЖД-станции</p>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Нажмите на маркер, чтобы увидеть расписание</p>
                 <div id="map" style="width: 100%; height: 400px; border-radius: 16px; overflow: hidden; background: #f0f2f5;"></div>
-                <div id="selected-station-info" style="margin-top: 15px; display: none;">
-                    <div style="background: #f8f9fa; border-radius: 12px; padding: 12px;">
-                        <strong><i class="fas fa-map-pin"></i> Ближайшие станции:</strong>
-                        <div id="nearby-stations-list" style="margin-top: 10px;"></div>
-                    </div>
-                </div>
             </div>
         </div>        
         
@@ -95,6 +89,8 @@
         </div>
     </div>
 
+    <script src="stationCoords.js"></script>
+    <script src="trainCardRenderer.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

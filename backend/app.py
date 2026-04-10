@@ -2,12 +2,20 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from yaschedule.core import YaSchedule
 from stations_cache import load_all_stations, search_stations
+from dotenv import load_dotenv
 import os
 
-app = Flask(__name__)
-CORS(app)  
+load_dotenv()
 
-API_KEY = "5c828416-5d57-4d80-ad6c-4ad09207f8cd"
+app = Flask(__name__)
+CORS(app)
+
+
+API_KEY = os.getenv('API_KEY')
+
+if not API_KEY:
+    print("Ошибка: API_KEY не найден в .env файле!")
+    exit(1)
 
 yaschedule = YaSchedule(API_KEY)
 
@@ -30,7 +38,7 @@ def get_station_schedule():
     if not station_code:
         return jsonify({'error': 'Не указана станция'}), 400
     
-    try:     
+    try:
         schedule = yaschedule.get_station_schedule(
             station=station_code, 
             transport_types='suburban'
@@ -58,7 +66,7 @@ def get_between_schedule():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/popular', methods=['GET'])
-def get_popular_stations():    
+def get_popular_stations():
     popular = [
         {'title': 'Москва (Киевский вокзал)', 'code': 's9603402'},
         {'title': 'Санкт-Петербург (Витебский)', 'code': 's9603551'},
