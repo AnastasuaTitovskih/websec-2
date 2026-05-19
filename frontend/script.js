@@ -1,11 +1,10 @@
+// script.js - Главный файл инициализации
+
 const API_BASE = 'http://localhost:5000/api';
 
 let selectedFromCode = null;
 let selectedToCode = null;
 let selectedSingleCode = null;
-let favorites = [];
-let map = null;
-let mapInitialized = false;
 
 $(document).ready(function() {
     favorites = loadFavorites();
@@ -16,6 +15,10 @@ $(document).ready(function() {
     
     $('#search-between').click(searchBetweenStations);
     $('#search-station').click(searchStationSchedule);
+    $(window).on('beforeunload', function() {
+        cleanupMapTimer();
+        destroyMap();
+    });
 });
 
 function initTabs() {
@@ -26,18 +29,29 @@ function initTabs() {
         const tab = $(this).data('tab');
         $('.tab-content').removeClass('active');
         
-        if (tab === 'between') $('#between-tab').addClass('active');
-        else if (tab === 'station') $('#station-tab').addClass('active');
+        if (tab === 'between') {
+            $('#between-tab').addClass('active');
+            cleanupMapTimer(); 
+        }
+        else if (tab === 'station') {
+            $('#station-tab').addClass('active');
+            cleanupMapTimer();
+        }
         else if (tab === 'favorites') {
             $('#favorites-tab').addClass('active');
             renderFavorites();
+            cleanupMapTimer();
         }
         else if (tab === 'map') {
             $('#map-tab').addClass('active');
+            cleanupMapTimer(); 
+            
             if (!mapInitialized) {
                 initMap();
             } else if (map) {
-                map.container.fitToViewport();
+                setTimeout(() => {
+                    map.container.fitToViewport();
+                }, 100);
             }
         }
     });
@@ -188,7 +202,7 @@ function renderSchedule(data) {
             
             const stationCode = item.from?.code || '---';
             const stationTitle = fromStation;
-            const isFav = isFavorite(stationCode);
+            const isFav = favoritesManager.isFavorite(stationCode);
             
             const trainCard = renderTrainCardBetween(trainNumber, fromStation, toStation, departureTime, arrivalTime, stationCode, stationTitle, isFav);
             
@@ -214,7 +228,7 @@ function renderSchedule(data) {
             let stationCode = selectedSingleCode || fromStation;
             let stationTitle = fromStation !== '---' ? fromStation : trainTitle.split(' — ')[0];
             
-            const isFav = isFavorite(stationCode);
+            const isFav = favoritesManager.isFavorite(stationCode);
             
             const trainCard = renderTrainCardStation(trainTitle, trainNumber, fromStation, toStation, departureTime, arrivalTime, stationCode, stationTitle, isFav, item.days);
             
@@ -227,41 +241,33 @@ function renderSchedule(data) {
 function attachFavoriteHandler(card, code, title) {
     card.find('.favorite-btn').click(function(e) {
         e.stopPropagation();
-        toggleFavorite(code, title);
+        const result = favoritesManager.toggle(code, title);
+        
         $(this).toggleClass('active');
         const icon = $(this).find('i');
         const span = $(this).find('span');
         
-        const isNowFavorite = isFavorite(code);
+        const isNowFavorite = favoritesManager.isFavorite(code);
         if (isNowFavorite) {
             icon.removeClass('fa-heart-o').addClass('fa-heart');
             span.text('В избранном');
+            showMessage(`✅ ${title} добавлена в избранное`, 'success');
         } else {
             icon.removeClass('fa-heart').addClass('fa-heart-o');
             span.text('В избранное');
+            showMessage(`❌ ${title} удалена из избранного`, 'error');
         }
+        
+        renderFavorites();
     });
 }
 
-function isLocalStorageAvailable() {
-    try {
-        const test = '__storage_test__';
-        localStorage.setItem(test, test);
-        localStorage.removeItem(test);
-        return true;
-    } catch(e) {
-        return false;
-    }
-}
-
 function loadFavorites() {
-    if (!isLocalStorageAvailable()) return [];
     const saved = localStorage.getItem('favoriteStations');
     return saved ? JSON.parse(saved) : [];
 }
 
 function saveFavorites() {
-    if (!isLocalStorageAvailable()) return;
     localStorage.setItem('favoriteStations', JSON.stringify(favorites));
 }
 
@@ -282,46 +288,6 @@ function toggleFavorite(stationCode, stationTitle) {
 
 function isFavorite(stationCode) {
     return favorites.some(f => f.code === stationCode);
-}
-
-function renderFavorites() {
-    const container = $('#favorites-list');
-    
-    if (favorites.length === 0) {
-        container.html('<p class="empty-message">⭐ Нет избранных станций. Нажмите на сердечко в расписании!</p>');
-        return;
-    }
-    
-    container.empty();
-    favorites.forEach(fav => {
-        const card = $(`
-            <div class="favorite-station-card" data-code="${fav.code}">
-                <div class="favorite-station-info">
-                    <h4><i class="fas fa-train"></i> ${fav.title}</h4>
-                    <p>Нажмите, чтобы посмотреть расписание</p>
-                </div>
-                <button class="remove-favorite" data-code="${fav.code}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `);
-        
-        card.click(function(e) {
-            if (!$(e.target).closest('.remove-favorite').length) {
-                selectedSingleCode = fav.code;
-                $('#single-station').val(fav.title);
-                $('.tab-btn[data-tab="station"]').click();
-                searchStationSchedule();
-            }
-        });
-        
-        card.find('.remove-favorite').click(function(e) {
-            e.stopPropagation();
-            toggleFavorite(fav.code, fav.title);
-        });
-        
-        container.append(card);
-    });
 }
 
 function showMessage(text) {
@@ -345,25 +311,73 @@ function hideLoader() {
     
 }
 
-
 function initMap() {
-    if (map !== null) return;
+    if (mapInitTimer) {
+        clearTimeout(mapInitTimer);
+        mapInitTimer = null;
+    }
     
-    if (typeof ymaps === 'undefined') {
-        console.log('Ожидание загрузки Яндекс.Карт...');
-        setTimeout(initMap, 200);
+    if (map !== null) {
         return;
     }
     
+    if (typeof ymaps === 'undefined') {
+        mapInitAttempts++;
+        
+        if (mapInitAttempts >= MAX_MAP_INIT_ATTEMPTS) {
+            console.error('Не удалось загрузить Яндекс.Карты');
+            showMessage('❌ Не удалось загрузить карту. Проверьте подключение к интернету.');
+            mapInitAttempts = 0;
+            return;
+        }
+        
+        console.log(`Ожидание загрузки Яндекс.Карт... (попытка ${mapInitAttempts}/${MAX_MAP_INIT_ATTEMPTS})`);
+        
+        mapInitTimer = setTimeout(initMap, 200);
+        return;
+    }
+   
     ymaps.ready(function() {
-        map = new ymaps.Map('map', {
-            center: [55.751574, 37.573856],
-            zoom: 9,
-            controls: ['zoomControl', 'fullscreenControl']
-        });
-        mapInitialized = true;
-        loadStationsOnMap();
+        if (map !== null) {
+            return;
+        }
+        
+        try {
+            map = new ymaps.Map('map', {
+                center: [55.751574, 37.573856],
+                zoom: 9,
+                controls: ['zoomControl', 'fullscreenControl']
+            });
+            mapInitialized = true;
+            loadStationsOnMap();
+            showMessage(`📍 На карте отмечено ${STATIONS_COORDS.length} станций`);
+        } catch (error) {
+            console.error('Ошибка при создании карты:', error);
+            showMessage('❌ Ошибка при загрузке карты');
+        }
     });
+}
+
+function cleanupMapTimer() {
+    if (mapInitTimer) {
+        clearTimeout(mapInitTimer);
+        mapInitTimer = null;
+    }
+    mapInitAttempts = 0;
+}
+
+function destroyMap() {
+    cleanupMapTimer();
+    
+    if (map !== null) {
+        try {
+            map.destroy();
+        } catch (error) {
+            console.error('Ошибка при уничтожении карты:', error);
+        }
+        map = null;
+        mapInitialized = false;
+    }
 }
 
 function loadStationsOnMap() {
